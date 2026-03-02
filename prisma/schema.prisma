@@ -1,0 +1,96 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum EmploymentType {
+  PERMANENT
+  LABOUR_HIRE
+}
+
+enum PermanentClass {
+  FULL_TIME
+  PART_TIME
+  CASUAL
+}
+
+enum TimeCode {
+  NORMAL
+  OVERTIME_1_5
+  OVERTIME_2_0
+  PUBLIC_HOLIDAY
+  ANNUAL_LEAVE
+  PERSONAL_LEAVE
+  RDO
+}
+
+model User {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  name             String?
+  passwordHash     String
+  role             String   @default("EMPLOYEE") // EMPLOYEE | ADMIN
+
+  employmentType   EmploymentType
+  permanentClass   PermanentClass?
+  labourHireCompany String?
+
+  timesheets       TimesheetDay[]
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
+
+model Job {
+  id          String   @id @default(cuid())
+  myobJobCode String   @unique
+  name        String
+  isOpen      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  timeEntries TimeEntry[]
+}
+
+model PayPeriod {
+  id        String   @id @default(cuid())
+  startDate DateTime
+  endDate   DateTime
+  isLocked  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  days      TimesheetDay[]
+}
+
+model TimesheetDay {
+  id          String   @id @default(cuid())
+  userId      String
+  date        DateTime
+  payPeriodId String
+
+  user        User      @relation(fields: [userId], references: [id])
+  payPeriod   PayPeriod @relation(fields: [payPeriodId], references: [id])
+  entries     TimeEntry[]
+
+  submittedAt DateTime?
+  approvedAt  DateTime?
+  approvedBy  String?
+
+  @@unique([userId, date])
+}
+
+model TimeEntry {
+  id             String   @id @default(cuid())
+  timesheetDayId String
+  jobId          String?
+  timeCode       TimeCode
+  hours          Decimal  
+  notes          String?
+
+  timesheetDay   TimesheetDay @relation(fields: [timesheetDayId], references: [id])
+  job            Job?         @relation(fields: [jobId], references: [id])
+
+  createdAt      DateTime @default(now())
+}
