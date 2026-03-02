@@ -19,7 +19,6 @@ export default function LoginPage() {
       callbackUrl: "/timesheet",
     });
 
-    // If redirect=false, you'd check res?.error
     if ((res as any)?.error) setErr("Login failed");
   }
 
